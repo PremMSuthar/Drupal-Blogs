@@ -1,0 +1,168 @@
+# Coding Standards and Quality Checks
+
+This project follows Drupal 11 coding standards and includes automated checks configured for GitLab CI. This guide explains how to install required tools and run the checks locally.
+
+## Prerequisites
+
+- PHP 8.3+
+- Composer
+- Node.js 18+ and npm
+
+## Install developer dependencies
+
+Install PHP tools (once per environment):
+
+```bash
+composer require --dev \
+  drupal/coder \
+  dealerdirect/phpcodesniffer-composer-installer \
+  squizlabs/php_codesniffer \
+  phpmd/phpmd \
+  phpstan/phpstan \
+  phpstan/phpstan-deprecation-rules \
+  mglaman/phpstan-drupal
+```
+
+Install Node.js tools (optional for local JS/CSS linting):
+
+```bash
+npm install
+```
+
+## Directory conventions
+
+All checks target custom code only:
+- PHP/Drupal: `web/modules/custom`, `web/themes/custom`
+- JS: `web/modules/custom/**/*.js`, `web/themes/custom/**/*.js`
+- CSS: `web/{modules,themes}/custom/**/*.{css,scss,sass,less}`
+
+Core, vendor and built assets are excluded.
+
+## PHPCS (Drupal + DrupalPractice)
+
+Configuration: `phpcs.xml.dist`
+
+Run checks:
+```bash
+vendor/bin/phpcs --standard=phpcs.xml.dist web/modules/custom web/themes/custom
+```
+
+Auto-fix (safe fixers only):
+```bash
+vendor/bin/phpcbf --standard=phpcs.xml.dist web/modules/custom web/themes/custom
+```
+
+## PHPStan (Static Analysis)
+
+Configuration: `phpstan.neon.dist`
+
+Run analysis:
+```bash
+vendor/bin/phpstan analyse --configuration=phpstan.neon.dist web/modules/custom web/themes/custom
+```
+
+Tip: You can adjust strictness in `phpstan.neon.dist` (parameter `level`).
+
+## PHPMD (Mess Detector)
+
+Configuration: `phpmd.xml.dist`
+
+Run checks (ruleset file):
+```bash
+CUSTOM_DIRS="web/modules/custom,web/themes/custom"
+vendor/bin/phpmd "$CUSTOM_DIRS" text phpmd.xml.dist
+```
+
+Generate XML report (ruleset file):
+```bash
+vendor/bin/phpmd "$CUSTOM_DIRS" xml phpmd.xml.dist --reportfile phpmd-report.xml
+```
+
+Alternative: use built‑in rule names (reliable on all environments):
+```bash
+# Text output
+vendor/bin/phpmd "$CUSTOM_DIRS" text cleancode,codesize,controversial,design,naming,unusedcode
+
+# XML report
+vendor/bin/phpmd "$CUSTOM_DIRS" xml cleancode,codesize,controversial,design,naming,unusedcode --reportfile phpmd-report.xml
+```
+
+Troubleshooting: "Cannot find specified rule-set 'clea'"
+- Cause: PHPMD sometimes mis-parses the ruleset argument or a shell wrapper truncates the value.
+- Fix options:
+  1) Use the built‑in rule list (above).
+  2) Force absolute paths when using the XML file:
+     ```bash
+     php vendor/bin/phpmd "$(pwd)/web/modules/custom,web/themes/custom" xml "$(pwd)/phpmd.xml.dist" --reportfile "$(pwd)/phpmd-report.xml"
+     ```
+  3) Ensure there are no phpmd aliases or env overrides.
+
+## ESLint (JavaScript)
+
+Configuration: `.eslintrc.json` (root)
+
+Run checks:
+```bash
+npm run lint:js
+```
+
+Auto-fix:
+```bash
+npm run fix:js
+```
+
+## Stylelint (CSS/SCSS)
+
+Configuration: `.stylelintrc.json`
+
+Run checks:
+```bash
+npm run lint:css
+```
+
+Auto-fix:
+```bash
+npm run fix:css
+```
+
+## GitLab CI mapping
+
+The pipeline uses these configs and commands:
+- Build (Composer/Node) — installs dependencies
+- PHPCS — `vendor/bin/phpcs --standard=phpcs.xml.dist`
+- PHPStan — `vendor/bin/phpstan analyse --configuration=phpstan.neon.dist`
+- PHPMD — `vendor/bin/phpmd ... phpmd.xml.dist`
+- ESLint — `npx eslint --no-eslintrc --config .eslintrc.json`
+- Stylelint — `npx stylelint`
+
+If a job fails, run the matching local command(s) above, fix issues, and commit.
+
+## Common tips
+
+- Ensure Composer dev dependencies are installed locally before running PHP tools
+- Clear caches if tools behave unexpectedly:
+  - PHPStan: delete `.phpstan-cache/` or the configured `tmpDir`
+  - Node: remove `node_modules/` and reinstall
+- Keep your Drupal core and contrib modules up to date for best results
+
+## Useful one-liners
+
+Run all PHP checks:
+```bash
+vendor/bin/phpcs --standard=phpcs.xml.dist web/modules/custom web/themes/custom && \
+vendor/bin/phpstan analyse --configuration=phpstan.neon.dist web/modules/custom web/themes/custom && \
+CUSTOM_DIRS="web/modules/custom,web/themes/custom" vendor/bin/phpmd "$CUSTOM_DIRS" text phpmd.xml.dist
+```
+
+Run all frontend checks:
+```bash
+npm run lint:js && npm run lint:css
+```
+
+## Further reading
+- Drupal coding standards: https://www.drupal.org/docs/develop/standards
+- Drupal PHPCS standard (drupal/coder): https://www.drupal.org/project/coder
+- PHPStan for Drupal: https://github.com/mglaman/phpstan-drupal
+- PHPMD: https://phpmd.org/
+- ESLint: https://eslint.org/
+- Stylelint: https://stylelint.io/
