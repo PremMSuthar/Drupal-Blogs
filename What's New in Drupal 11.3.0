@@ -1,0 +1,314 @@
+# What's New in Drupal 11.3.0
+
+Drupal 11.3.0 is a **major feature release** with the biggest performance improvements in a decade. This release brings native HTMX support, significant performance boosts, and several developer-friendly enhancements.
+
+## Key Highlights
+
+- **26-33% more requests** with the same database load
+- **Up to 71% less JavaScript** with native HTMX support
+- **Navigation module** is now stable
+- **Object-oriented hooks** for themes
+- **Native content export** via command line
+- **PHP 8.5** support
+
+---
+
+## 1. Biggest Performance Boost in a Decade 🚀
+
+Database query and cache operations have been significantly optimized for both cold and warm caches.
+
+### Performance Improvements
+
+- **Cold cache optimization:** ~33% reduction in database queries
+- **Warm cache optimization:** ~25% reduction in database queries
+- **Real-world impact:** Complex sites see even bigger improvements
+
+### Technical Details
+
+The render and caching layers now combine database and cache operations, particularly in:
+- Path alias resolution
+- Entity loading
+- BigPipe implementation (now uses HTMX on the frontend)
+
+This results in a significant reduction in JavaScript weight and faster page loads.
+
+[Read more about performance improvements in Drupal 11.3.0](https://www.drupal.org/about/core/blog/drupal-1130-biggest-performance-boost-in-a-decade)
+
+---
+
+## 2. Native HTMX Support: Rich UX with Less JavaScript ⚡
+
+Drupal 11.3.0 now natively integrates **HTMX**, a powerful, dependency-free JavaScript library that enables modern browser features directly in HTML attributes.
+
+### Benefits
+
+- **Up to 71% less JavaScript** required for interactive features
+- Build fast, interactive user interfaces without extensive custom JavaScript
+- Lightweight and dependency-free
+- Modern browser features via HTML attributes
+
+### Use Cases
+
+HTMX is perfect for:
+- Form submissions without page reload
+- Live search and filtering
+- Infinite scroll
+- Modal dialogs
+- Dynamic content updates
+- Real-time data refreshing
+
+### Example
+
+```html
+<!-- Simple HTMX example -->
+<button hx-get="/api/data" hx-target="#result">
+  Load Data
+</button>
+<div id="result"></div>
+```
+
+[Read more about HTMX support in Drupal 11.3.0](https://www.drupal.org/about/core/blog/native-htmx-in-drupal-1130-rich-ux-with-up-to-71-less-javascript)
+
+---
+
+## 3. Navigation Module is Now Stable 🧭
+
+The Navigation module has graduated from experimental to stable status, offering a superior and more modern experience than the old Toolbar.
+
+### Key Features
+
+- Modern, intuitive admin interface
+- Especially useful for sites with complex administration structures
+- Better organization of admin tasks
+- Improved user experience for content editors
+
+### Recommendation
+
+While not yet the default, the Drupal team **strongly encourages** all users to switch to the Navigation module and benefit from its improvements.
+
+---
+
+## 4. Improved Content Editing ✍️
+
+CKEditor has received several user-friendly enhancements to improve the content editing experience.
+
+### New Features
+
+#### 1. Internal Content Linking
+- Link to content on your site using autocomplete or dropdown
+- Uses entity references for reliable linking
+- No more broken links when content moves
+
+#### 2. Enhanced List Formatting
+- New, user-friendly options for formatting list bullets
+- Improved numbering options
+- Better visual controls
+
+#### 3. Granular Permissions
+- New **"Administer node published status"** permission
+- Manage publication status without requiring full "Administer nodes" permission
+- Better security and role separation
+
+---
+
+## 5. Object-Oriented Hooks in Themes 🎨
+
+Themes can now use the same `#[Hook()]` attribute system as modules, bringing modern PHP practices to theme development.
+
+### Benefits
+
+- **Cleaner code:** Write more structured, maintainable theme code
+- **Container integration:** Theme namespaces registered in the container
+- **Familiar structure:** OOP implementations in `src/Hook/` directory (like modules)
+- **Full support:** Both normal and alter hooks are supported
+
+### Example
+
+```php
+<?php
+
+namespace Drupal\mytheme\Hook;
+
+use Drupal\Core\Hook\Attribute\Hook;
+
+/**
+ * Hook implementations for mytheme.
+ */
+class MyThemeHooks {
+
+  /**
+   * Implements hook_preprocess_node().
+   */
+  #[Hook('preprocess_node')]
+  public function preprocessNode(&$variables): void {
+    // Add custom variables
+    $variables['custom_class'] = 'my-custom-class';
+  }
+
+  /**
+   * Implements hook_theme_suggestions_node_alter().
+   */
+  #[Hook('theme_suggestions_node_alter')]
+  public function themeSuggestionsNodeAlter(array &$suggestions, array $variables): void {
+    // Add custom theme suggestions
+    $node = $variables['elements']['#node'];
+    $suggestions[] = 'node__' . $node->bundle() . '__custom';
+  }
+}
+```
+
+### Migration Path
+
+Existing procedural hooks in `.theme` files continue to work. You can migrate to OOP hooks gradually.
+
+---
+
+## 6. Native Content Export 📦
+
+Drupal core now includes a command-line tool to export content, previously only available through the contributed Default Content module.
+
+### Usage
+
+```bash
+php core/scripts/drupal content:export ENTITY_TYPE_ID ENTITY_ID
+```
+
+### Features
+
+- **Export single entities:** Export any content entity by type and ID
+- **Automatic dependencies:** Optionally export referenced entities (images, taxonomy terms, etc.)
+- **Standard format:** Uses the same format as the Default Content module
+- **Migration ready:** Perfect for content migrations and deployments
+
+### Examples
+
+```bash
+# Export a specific node
+php core/scripts/drupal content:export node 123
+
+# Export a taxonomy term
+php core/scripts/drupal content:export taxonomy_term 456
+
+# Export a media item
+php core/scripts/drupal content:export media 789
+```
+
+---
+
+## 7. PHP 8.5 Support 🐘
+
+Drupal 11.3.0 ensures full compatibility with PHP 8.5, which was released in November 2024.
+
+### What This Means
+
+- **Full compatibility:** All Drupal core features work with PHP 8.5
+- **Core testing:** Automated tests now run on PHP 8.5
+- **Future-ready:** PHP 8.5 will be the minimum required version for Drupal 12 (planned for 2026)
+
+### Upgrade Path
+
+- **Drupal 11.3:** Supports PHP 8.1, 8.2, 8.3, 8.4, and 8.5
+- **Drupal 12:** Will require PHP 8.5 minimum (2026)
+
+---
+
+## 8. Experimental: Parallel Database Queries 🔬
+
+A new experimental MySQLi database driver has been added for MySQL and MariaDB databases.
+
+### Technical Details
+
+- **Uses MySQLi extension** instead of PDO
+- **Parallel query execution** instead of sequential
+- **Currently experimental** and hidden from the UI
+- **Not yet production-ready**
+
+### Future Plans
+
+This driver lays the foundation for **asynchronous database query support** in future Drupal releases, which will further improve performance for complex queries.
+
+### Note
+
+This feature is experimental and should not be used in production environments yet.
+
+---
+
+## Comparison Table
+
+| Feature | Drupal 11.2 | Drupal 11.3 | Improvement |
+|---------|-------------|-------------|-------------|
+| **Database Queries (Cold Cache)** | Baseline | -33% | 33% faster |
+| **Database Queries (Warm Cache)** | Baseline | -25% | 25% faster |
+| **JavaScript Weight (with HTMX)** | Baseline | -71% | Much lighter |
+| **Navigation Module** | Experimental | Stable | Production-ready |
+| **Content Export** | Contrib module | Core | Built-in |
+| **Theme Hooks** | Procedural only | OOP + Procedural | Modern PHP |
+| **PHP Support** | 8.1-8.4 | 8.1-8.5 | Latest PHP |
+
+---
+
+## Should You Upgrade?
+
+### Upgrade if you need:
+
+✅ **Better performance** - Serve more requests with the same resources  
+✅ **Modern JavaScript** - Reduce complexity with HTMX  
+✅ **Cleaner code** - Use OOP hooks in themes  
+✅ **Better admin UX** - Stable Navigation module  
+✅ **Content migration** - Native export tools  
+✅ **Future-proofing** - PHP 8.5 support  
+
+### Also Available
+
+**Drupal 10.6** is also released with the same features for sites not yet ready to upgrade to Drupal 11.
+
+---
+
+## Getting Started
+
+### Installation
+
+```bash
+# For new sites
+composer create-project drupal/recommended-project:^11.3 my-site
+
+# For existing sites
+composer update drupal/core-recommended --with-all-dependencies
+drush updatedb
+drush cache:rebuild
+```
+
+### Enable Navigation Module
+
+```bash
+drush en navigation -y
+drush cache:rebuild
+```
+
+### Try HTMX
+
+HTMX is available automatically in Drupal 11.3. Start using it in your custom modules and themes by adding HTMX attributes to your HTML.
+
+---
+
+## Resources
+
+- [Official Drupal 11.3.0 Announcement](https://www.drupal.org/blog/drupal-11-3-0)
+- [Performance Improvements Details](https://www.drupal.org/about/core/blog/drupal-1130-biggest-performance-boost-in-a-decade)
+- [HTMX in Drupal 11.3](https://www.drupal.org/about/core/blog/native-htmx-in-drupal-1130-rich-ux-with-up-to-71-less-javascript)
+- [HTMX Official Documentation](https://htmx.org/)
+- [Drupal 11.3 Release Notes](https://www.drupal.org/project/drupal/releases/11.3.0)
+
+---
+
+## Conclusion
+
+Drupal 11.3.0 represents a significant leap forward in performance, developer experience, and modern web development practices. The combination of performance optimizations, native HTMX support, and developer-friendly features makes this one of the most important Drupal releases in recent years.
+
+Whether you're building a new site or maintaining an existing one, Drupal 11.3.0 offers compelling reasons to upgrade and take advantage of these improvements.
+
+---
+
+**Published:** December 2024  
+**Version:** Drupal 11.3.0  
+**Also Available:** Drupal 10.6 with the same features
